@@ -1,71 +1,64 @@
-
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Nume_Pren_Lab2.Models;
 
-namespace WebApplication1.Pages.BookPages;
-
-public class CreateModel : PageModel
+namespace WebApplication1.Pages.BookPages
 {
-    private readonly WebApplication1Context _context;
-
-    public CreateModel(WebApplication1Context context)
-    {
-        _context = context;
-    }
-
-    [BindProperty]
-    public Book Book { get; set; } = default!;
-
-    public IActionResult OnGet()
-    {
-        LoadPublishers();
-        LoadAuthors();
-        return Page();
-    }
-
-    private void LoadPublishers()
-    {
-        ViewData["PublisherID"] = new SelectList(
-            _context.Set<Publisher>(),
-            "ID",
-            "PublisherName",
-            Book?.PublisherID
-        );
-    }
-
-    private void LoadAuthors()
-    {
-        ViewData["AuthorsID"] = new SelectList(
-            _context.Set<Authors>()
-                .Select(a => new
-                {
-                    a.ID,
-                    FullName = a.FirstName + " " + a.LastName
-                }),
-            "ID",
-            "FullName",
-            Book?.AuthorsID
-        );
-    }
-
-    public async Task<IActionResult> OnPostAsync()
-    {
-        ModelState.Remove("Book.Publisher");
-        ModelState.Remove("Book.Authors");
-
-        if (!ModelState.IsValid)
-        {
-            LoadPublishers();
-            LoadAuthors();
-            return Page();
-        }
-
-        _context.Book.Add(Book);
-        await _context.SaveChangesAsync();
-
-        return RedirectToPage("./Index");
-    }
+public class CreateModel : BookCategoriesPageModel 
+             { 
+                 private readonly WebApplication1Context _context; 
+          
+                 public CreateModel(WebApplication1Context context) 
+                 { 
+                     _context = context; 
+                 } 
+          
+                 public IActionResult OnGet() 
+                 { 
+             var authorList = _context.Authors.Select(x => new 
+                     { 
+                         x.ID, 
+                         FullName = x.LastName + " " + x.FirstName 
+                     });  
+          
+         // daca am adaugat o proprietate FullName in clasa Author  
+                 ViewData["AuthorsID"] = new SelectList(authorList, "ID", "FullName"); 
+                 ViewData["PublisherID"] = new SelectList(_context.Publisher, "ID", 
+         "PublisherName"); 
+                     
+                     var book = new Book(); 
+                     book.BookCategories = new List<BookCategory>(); 
+          
+                     PopulateAssignedCategoryData(_context, book); 
+          
+                     return Page(); 
+                 } 
+          
+                 [BindProperty] 
+                 public Book Book { get; set; } 
+          
+                 public async Task<IActionResult> OnPostAsync(string[] selectedCategories) 
+                 { 
+                     var newBook = new Book(); 
+                     if (selectedCategories != null) 
+                     { 
+                         newBook.BookCategories = new List<BookCategory>(); 
+                         foreach (var cat in selectedCategories) 
+                         { 
+                             var catToAdd = new BookCategory 
+                             { 
+                                 CategoryID = int.Parse(cat) 
+                             }; 
+                             newBook.BookCategories.Add(catToAdd); 
+                         } 
+                     } 
+          
+                     Book.BookCategories = newBook.BookCategories;    
+                      _context.Book.Add(Book); 
+                         await _context.SaveChangesAsync(); 
+                         return RedirectToPage("./Index"); 
+                     } 
+                      
+                 }
 }
