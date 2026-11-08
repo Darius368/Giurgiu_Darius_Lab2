@@ -14,6 +14,7 @@ public class Book
                  [Column(TypeName = "decimal(6, 2)")] 
                  public decimal Price { get; set; } 
           
+                 [DataType(DataType.Date)]
                  public DateTime PublishingDate { get; set; } 
                   
                  public int? AuthorsID { get; set; } 
@@ -24,6 +25,7 @@ public class Book
                   
                  public Publisher? Publisher { get; set; } 
                      
+                 public ICollection<Borrowing>? Borrowings { get; set; }
                  public ICollection<BookCategory>? BookCategories { get; set; } 
              }
 }
